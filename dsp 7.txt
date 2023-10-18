@@ -1,4 +1,60 @@
 QUESTION 1
+
+N = 64;
+
+% Define the windows
+rectangular_window = ones(1, N);
+hamming_window = hamming(N);
+hanning_window = hanning(N);
+
+window_length = 64;
+rectangular_window = ones(1, window_length);
+
+% Plot the rectangular window
+figure;
+plot(rectangular_window);
+title('Rectangular Window');
+xlabel('Sample');
+ylabel('Amplitude');
+
+window_length = 64;
+hamming_window = hamming(window_length);
+
+% Plot the Hamming window
+figure;
+plot(hamming_window);
+title('Hamming Window');
+xlabel('Sample');
+ylabel('Amplitude');
+
+window_length = 64;
+hanning_window = hann(window_length);
+
+% Plot the Hanning window
+figure;
+plot(hanning_window);
+title('Hanning Window');
+xlabel('Sample');
+ylabel('Amplitude');
+
+
+% Compute the frequency response using freqz
+figure;
+freqz(rectangular_window, 1, 1024, 1);
+title('Rectangular Window');
+sgtitle('Frequency Response of Rectangular Window');
+
+figure;
+freqz(hamming_window, 1, 1024, 1);
+title('Hamming Window');
+sgtitle('Frequency Response of Hamming Window');
+
+figure;
+freqz(hanning_window, 1, 1024, 1);
+title('Hanning Window');
+
+% Adjust the figure layout
+sgtitle('Frequency Response of Hanning Window');
 % Parameters
 N = [100, 200, 300];
 alpha = 1;
