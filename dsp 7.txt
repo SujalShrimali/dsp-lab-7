@@ -1,0 +1,171 @@
+QUESTION 1
+% Parameters
+N = [100, 200, 300];
+alpha = 1;
+DFT_length = 1024;
+
+% Initialize the frequency vector
+f = linspace(0, 1, DFT_length);
+
+% Loop over different lengths
+for i = 1:length(N)
+    % Generate the Hanning window
+    w = blackmanharris(N(i));
+
+    % Zero-pad the window to match the DFT length
+    w_padded = [w; zeros(DFT_length - N(i), 1)];
+
+    % Compute the DFT
+    X = fft(w_padded, DFT_length);
+
+    % Normalize by the actual length
+    X_normalized = abs(X) / N(i);
+
+    % Plot the spectrum
+    subplot(length(N), 1, i);
+    plot(f, 20*log10(X_normalized));
+    title(['Spectrum of Hanning Window (N = ' num2str(N(i)) ')']);
+    xlabel('Frequency (Normalized)');
+    ylabel('Magnitude (dB)');
+    axis([0 0.05 -60 0]); % Set the axis limits
+    grid on;
+end
+
+
+QUESTION 2
+
+% Parameters
+alpha = 2; % Blackman window
+window_length = 21;
+cutoff_frequency = pi / (alpha + 1);
+
+% Design FIR filters with different windows
+rectangular_filter = fir1(window_length-1, cutoff_frequency/(pi), 'low', rectwin(window_length));
+blackman_filter = fir1(window_length-1, cutoff_frequency/(pi), 'low', blackman(window_length));
+
+% Impulse responses on the same graph using different colors
+figure;
+stem(rectangular_filter, 'b', 'LineWidth', 1.5, 'MarkerSize', 8, 'MarkerFaceColor', 'b');
+hold on;
+stem(blackman_filter, 'r', 'LineWidth', 1.5, 'MarkerSize', 8, 'MarkerFaceColor', 'r');
+hold off;
+title('Impulse Response of Low-Pass FIR Filters');
+xlabel('Sample Index');
+ylabel('Amplitude');
+legend('Rectangular Window', 'Blackman Window');
+grid on;
+
+% Frequency responses on the same graph using different colors
+[frequency_response_rect, freq_rect] = freqz(rectangular_filter, 1, 'half');
+[frequency_response_blackman, freq_blackman] = freqz(blackman_filter, 1, 'half');
+
+figure;
+plot(freq_rect, 20*log10(abs(frequency_response_rect)), 'b', 'LineWidth', 1.5);
+hold on;
+plot(freq_blackman, 20*log10(abs(frequency_response_blackman)), 'r', 'LineWidth', 1.5);
+hold off;
+title('Frequency Response (Bode Plot) of Low-Pass FIR Filters');
+xlabel('Frequency (\pi radians/sample)');
+ylabel('Magnitude (dB)');
+legend('Rectangular Window', 'Blackman Window');
+grid on;
+
+% Comment on the filters
+disp('The rectangular window filter has a sharper transition band and higher stopband attenuation compared to the Blackman window filter.');
+
+
+
+QUESTION 3
+
+% Load audio file
+[audio, fs] = audioread('instru2.wav');
+% Parameters for the spectrogram
+window_length = 512; % You can adjust this based on your preference
+overlap = window_length / 2;
+[S, F, T] = spectrogram(audio, hamming(window_length), overlap, window_length, fs, 'yaxis');
+
+% Plot the spectrogram
+figure;
+imagesc(T, F, 10*log10(abs(S)));
+xlabel('Time (s)');
+ylabel('Frequency (Hz)');
+title('Spectrogram of instru2.wav');
+colorbar;
+% Design a low-pass FIR filter to extract the fundamental frequency
+fundamental_frequency = 440; % Example fundamental frequency in Hz (adjust as needed)
+filter_order = 100; % Filter order (adjust as needed)
+nyquist = fs / 2;
+normalized_cutoff_frequency = fundamental_frequency / nyquist;
+
+% Design the FIR filter using window method
+fir_filter = fir1(filter_order, normalized_cutoff_frequency, 'low');
+
+% Apply the filter to the audio signal
+filtered_audio = filter(fir_filter, 1, audio);
+% Compute the spectrogram of the filtered audio
+[S_filtered, F_filtered, T_filtered] = spectrogram(filtered_audio, hamming(window_length), overlap, window_length, fs, 'yaxis');
+
+% Plot the spectrogram of the filtered audio
+figure;
+imagesc(T_filtered, F_filtered, 10*log10(abs(S_filtered)));
+xlabel('Time (s)');
+ylabel('Frequency (Hz)');
+title('Spectrogram of Filtered Audio (Fundamental Only)');
+colorbar;
+% Write the filtered audio to a new .wav file
+audiowrite('filtered_audio.wav', filtered_audio, fs);
+
+% Play the filtered audio
+sound(filtered_audio, fs);
+
+
+
+
+
+QUESTION 4
+
+
+Certainly! Time-domain windowing and window-based FIR filter design are two different techniques used in signal processing, each with its own purpose and application. Let's differentiate between the two methods and provide a descriptive comparison:
+
+### Time-Domain Windowing:
+
+**1. Purpose:**
+   - **Smoothing and Shaping Signals:** Time-domain windowing is primarily used for smoothing or shaping a signal. It involves element-wise multiplication of a signal with a window function in the time domain.
+   - **Reducing Spectral Leakage:** When a signal is not an exact multiple of the sampling frequency, the Fourier transform of the truncated signal leaks into adjacent frequency bins. Windowing reduces this spectral leakage.
+
+**2. Process:**
+   - **Window Function:** A window function (e.g., Hamming, Hanning, Blackman) is selected based on the specific requirements of the application.
+   - **Element-Wise Multiplication:** The window function is multiplied element-wise with the signal in the time domain.
+   - **Result:** The windowed signal has reduced sidelobes, which can be important for applications like spectral analysis.
+
+**3. Effect:**
+   - **Main Impact:** Windowing reduces the amplitude of signal samples near the edges of the window, effectively tapering the signal to zero.
+   - **Frequency Domain:** The Fourier Transform of a windowed signal shows reduced sidelobes and better frequency localization.
+
+### Window-Based FIR Filter Design:
+
+**1. Purpose:**
+   - **Frequency Response Design:** FIR filters are designed to modify the frequency content of a signal. They can be used for tasks such as low-pass, high-pass, or band-pass filtering.
+   - **Specific Frequency Response:** FIR filter design aims to achieve a specific frequency response, often defined in terms of magnitude and phase characteristics.
+
+**2. Process:**
+   - **Filter Specifications:** Desired filter characteristics such as cutoff frequency, passband ripple, and stopband attenuation are defined.
+   - **Windowing:** A window function is used to design the filter coefficients. The desired frequency response is multiplied with the window function in the frequency domain.
+   - **Filter Design:** Filter coefficients are computed, often using algorithms like the Parks-McClellan or frequency sampling method.
+   - **Convolution:** The filter coefficients are applied to the signal using convolution, altering its frequency content as desired.
+
+**3. Effect:**
+   - **Main Impact:** FIR filters modify the amplitude and phase of specific frequency components in the signal.
+   - **Frequency Domain:** FIR filters reshape the frequency spectrum according to the defined specifications.
+
+### Comparison:
+
+- **Purpose:** Time-domain windowing is used for reducing spectral leakage and smoothing signals. FIR filter design is used for modifying the frequency response of signals.
+  
+- **Technique:** Time-domain windowing involves element-wise multiplication in the time domain, while FIR filter design involves frequency domain multiplication (convolution in time domain) after designing the filter coefficients.
+
+- **Frequency Response:** Time-domain windowing does not have a specific desired frequency response but reduces sidelobes. FIR filter design aims for a specific frequency response defined by filter specifications.
+
+- **Flexibility:** FIR filter design offers more flexibility in defining complex frequency responses, including sharp transitions between passbands and stopbands, which is not easily achievable with simple windowing techniques.
+
+In summary, time-domain windowing is a basic technique for reducing spectral leakage and shaping signals, while window-based FIR filter design is a more powerful and versatile tool for precise manipulation of the frequency content of signals. The choice between the two methods depends on the specific requirements of the application.
